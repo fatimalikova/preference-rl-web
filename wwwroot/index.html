@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Preference Arena</title>
+<style>
+  body { font-family: sans-serif; background:#1e1e1e; color:#eee; display:flex; flex-direction:column; align-items:center; padding:2rem; }
+  .clips { display:flex; gap:40px; margin-top:20px; }
+  .clip-box { text-align:center; }
+  canvas { background:#111; border:1px solid #444; border-radius:8px; }
+  button { margin-top:12px; padding:10px 20px; font-size:14px; cursor:pointer; }
+  #status { margin-top:20px; font-size:14px; color:#9c9; }
+</style>
+</head>
+<body>
+<h2>Which behavior is better?</h2>
+<div class="clips">
+  <div class="clip-box">
+    <canvas id="canvasA" width="200" height="200"></canvas><br>
+    <button onclick="choose('a')">A is better</button>
+  </div>
+  <div class="clip-box">
+    <canvas id="canvasB" width="200" height="200"></canvas><br>
+    <button onclick="choose('b')">B is better</button>
+  </div>
+</div>
+<div id="status">Loading pair...</div>
+
+<script>
+let current = null;
+let frame = 0;
+
+async function loadPair() {
+  status("Loading...");
+  const res = await fetch('/api/pair');
+  current = await res.json();
+  frame = 0;
+  status("Make your choice");
+}
+
+function drawPendulum(ctx, angle) {
+  ctx.clearRect(0, 0, 200, 200);
+  const cx = 100, cy = 100, len = 70;
+  const x = cx + len * Math.sin(angle);
+  const y = cy - len * Math.cos(angle);
+  ctx.strokeStyle = '#4af';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  ctx.fillStyle = '#4af';
+  ctx.beginPath();
+  ctx.arc(x, y, 10, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function animate() {
+  if (current) {
+    const ctxA = document.getElementById('canvasA').getContext('2d');
+    const ctxB = document.getElementById('canvasB').getContext('2d');
+    drawPendulum(ctxA, current.clipA.angles[frame % current.clipA.angles.length]);
+    drawPendulum(ctxB, current.clipB.angles[frame % current.clipB.angles.length]);
+    frame++;
+  }
+  setTimeout(() => requestAnimationFrame(animate), 40);
+}
+
+async function choose(which) {
+  const winnerId = which === 'a' ? current.clipA.id : current.clipB.id;
+  await fetch('/api/preference', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clipAId: current.clipA.id, clipBId: current.clipB.id, winnerId })
+  });
+  status("Saved! Loading next pair...");
+  loadPair();
+}
+
+function status(msg) { document.getElementById('status').textContent = msg; }
+
+loadPair();
+animate();
+</script>
+</body>
+</html>
