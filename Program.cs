@@ -7,7 +7,7 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-var clipsPath = Path.Combine(AppContext.BaseDirectory, "Data", "clips.json");
+var clipsPath = Path.Combine(builder.Environment.ContentRootPath, "Data", "clips.json");
 var clips = JsonSerializer.Deserialize<List<Clip>>(File.ReadAllText(clipsPath))!;
 var random = new Random();
 
@@ -26,7 +26,7 @@ app.MapGet("/api/pair", () =>
 
 app.MapPost("/api/preference", (PreferenceSubmission submission) =>
 {
-    var prefsPath = Path.Combine(AppContext.BaseDirectory, "Data", "human_preferences.json");
+    var prefsPath = Path.Combine(builder.Environment.ContentRootPath, "Data", "human_preferences.json");
     List<PreferenceSubmission> existing = new();
     if (File.Exists(prefsPath))
         existing = JsonSerializer.Deserialize<List<PreferenceSubmission>>(File.ReadAllText(prefsPath)) ?? new();

@@ -2,82 +2,362 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Preference Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  body { font-family: sans-serif; background:#1e1e1e; color:#eee; display:flex; flex-direction:column; align-items:center; padding:2rem; }
-  .clips { display:flex; gap:40px; margin-top:20px; }
-  .clip-box { text-align:center; }
-  canvas { background:#111; border:1px solid #444; border-radius:8px; }
-  button { margin-top:12px; padding:10px 20px; font-size:14px; cursor:pointer; }
-  #status { margin-top:20px; font-size:14px; color:#9c9; }
+  :root {
+    --bg: #0f1218;
+    --panel: #161a23;
+    --panel-border: #2a2f3d;
+    --text: #e7e9f0;
+    --text-dim: #8890a3;
+    --a: #e8a23d;
+    --a-dim: #6b551f;
+    --b: #4fc4c9;
+    --b-dim: #1f4b4d;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      linear-gradient(var(--panel-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-border) 1px, transparent 1px),
+      var(--bg);
+    background-size: 32px 32px, 32px 32px, auto;
+    background-position: -1px -1px;
+    opacity: 1;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  body::before {
+    content: '';
+  }
+
+  header {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2.25rem;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .counter {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .counter strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: rise 0.4s ease-out forwards;
+  }
+
+  .panel.b { animation-delay: 0.06s; }
+
+  @keyframes rise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-head {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .panel.a .tag { color: var(--a); background: rgba(232, 162, 61, 0.12); }
+  .panel.b .tag { color: var(--b); background: rgba(79, 196, 201, 0.12); }
+
+  .clip-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  canvas.scene {
+    background: #0a0c11;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    display: block;
+  }
+
+  canvas.trace {
+    margin-top: 10px;
+    display: block;
+  }
+
+  .trace-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    align-self: flex-start;
+    margin-top: 6px;
+  }
+
+  button.choose {
+    margin-top: 16px;
+    width: 100%;
+    padding: 11px 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .panel.a button.choose:hover, .panel.a button.choose:focus-visible { border-color: var(--a); background: rgba(232, 162, 61, 0.08); }
+  .panel.b button.choose:hover, .panel.b button.choose:focus-visible { border-color: var(--b); background: rgba(79, 196, 201, 0.08); }
+
+  button.choose:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  button.choose kbd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: 6px;
+  }
+
+  .panel.selected.a { border-color: var(--a); }
+  .panel.selected.b { border-color: var(--b); }
+
+  footer {
+    margin-top: 22px;
+    text-align: center;
+  }
+
+  #status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    min-height: 16px;
+  }
+
+  .hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.6;
+    margin-top: 6px;
+  }
 </style>
 </head>
 <body>
-<h2>Which behavior is better?</h2>
-<div class="clips">
-  <div class="clip-box">
-    <canvas id="canvasA" width="200" height="200"></canvas><br>
-    <button onclick="choose('a')">A is better</button>
+
+<header>
+  <div>
+    <p class="eyebrow">Preference labeling</p>
+    <h1>Which behavior balances better?</h1>
   </div>
-  <div class="clip-box">
-    <canvas id="canvasB" width="200" height="200"></canvas><br>
-    <button onclick="choose('b')">B is better</button>
+  <div class="counter">Labeled this session<br><strong id="count">0</strong></div>
+</header>
+
+<main>
+  <div class="panel a" id="panelA">
+    <div class="panel-head">
+      <span class="tag">A</span>
+      <span class="clip-id" id="idA">clip —</span>
+    </div>
+    <canvas class="scene" id="canvasA" width="220" height="220"></canvas>
+    <span class="trace-label">Angle over time</span>
+    <canvas class="trace" id="traceA" width="220" height="44"></canvas>
+    <button class="choose" onclick="choose('a')">A is better<kbd>A</kbd></button>
   </div>
-</div>
-<div id="status">Loading pair...</div>
+
+  <div class="panel b" id="panelB">
+    <div class="panel-head">
+      <span class="tag">B</span>
+      <span class="clip-id" id="idB">clip —</span>
+    </div>
+    <canvas class="scene" id="canvasB" width="220" height="220"></canvas>
+    <span class="trace-label">Angle over time</span>
+    <canvas class="trace" id="traceB" width="220" height="44"></canvas>
+    <button class="choose" onclick="choose('b')">B is better<kbd>B</kbd></button>
+  </div>
+</main>
+
+<footer>
+  <div id="status">Loading pair…</div>
+  <div class="hint">Press A or B to choose</div>
+</footer>
 
 <script>
 let current = null;
 let frame = 0;
+let labeledCount = 0;
+
+const colorA = '#e8a23d';
+const colorB = '#4fc4c9';
 
 async function loadPair() {
-  status("Loading...");
+  status('Loading pair…');
   const res = await fetch('/api/pair');
   current = await res.json();
   frame = 0;
-  status("Make your choice");
+  document.getElementById('idA').textContent = 'clip #' + current.clipA.id;
+  document.getElementById('idB').textContent = 'clip #' + current.clipB.id;
+  document.getElementById('panelA').classList.remove('selected');
+  document.getElementById('panelB').classList.remove('selected');
+  drawTrace('traceA', current.clipA.angles, colorA);
+  drawTrace('traceB', current.clipB.angles, colorB);
+  status('Choose A or B');
 }
 
-function drawPendulum(ctx, angle) {
-  ctx.clearRect(0, 0, 200, 200);
-  const cx = 100, cy = 100, len = 70;
+function drawPendulum(ctx, angle, color) {
+  ctx.clearRect(0, 0, 220, 220);
+  const cx = 110, cy = 110, len = 78;
   const x = cx + len * Math.sin(angle);
   const y = cy - len * Math.cos(angle);
-  ctx.strokeStyle = '#4af';
+
+  ctx.strokeStyle = '#232833';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy);
+  ctx.lineTo(cx + 10, cy);
+  ctx.stroke();
+
+  ctx.strokeStyle = color;
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.lineTo(x, y);
   ctx.stroke();
-  ctx.fillStyle = '#4af';
+
+  ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(x, y, 10, 0, Math.PI * 2);
+  ctx.arc(x, y, 9, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.fillStyle = '#3a4050';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawTrace(canvasId, angles, color) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const min = Math.min(...angles), max = Math.max(...angles);
+  const range = (max - min) || 1;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  angles.forEach((a, i) => {
+    const x = (i / (angles.length - 1)) * w;
+    const y = h - ((a - min) / range) * (h - 6) - 3;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
 }
 
 function animate() {
   if (current) {
     const ctxA = document.getElementById('canvasA').getContext('2d');
     const ctxB = document.getElementById('canvasB').getContext('2d');
-    drawPendulum(ctxA, current.clipA.angles[frame % current.clipA.angles.length]);
-    drawPendulum(ctxB, current.clipB.angles[frame % current.clipB.angles.length]);
+    drawPendulum(ctxA, current.clipA.angles[frame % current.clipA.angles.length], colorA);
+    drawPendulum(ctxB, current.clipB.angles[frame % current.clipB.angles.length], colorB);
     frame++;
   }
   setTimeout(() => requestAnimationFrame(animate), 40);
 }
 
 async function choose(which) {
+  if (!current) return;
   const winnerId = which === 'a' ? current.clipA.id : current.clipB.id;
+  document.getElementById(which === 'a' ? 'panelA' : 'panelB').classList.add('selected');
+
   await fetch('/api/preference', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ clipAId: current.clipA.id, clipBId: current.clipB.id, winnerId })
   });
-  status("Saved! Loading next pair...");
+
+  labeledCount++;
+  document.getElementById('count').textContent = labeledCount;
+  status('Saved. Loading next pair…');
   loadPair();
 }
 
 function status(msg) { document.getElementById('status').textContent = msg; }
+
+window.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'a') choose('a');
+  if (e.key.toLowerCase() === 'b') choose('b');
+});
 
 loadPair();
 animate();
